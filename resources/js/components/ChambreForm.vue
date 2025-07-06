@@ -122,8 +122,13 @@
                     type="number"
                     class="input"
                     placeholder="Identifiant de la maison"
-                    required
                 />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="inline-flex items-center space-x-2">
+                    <input type="checkbox" v-model="form.disponible" />
+                    <span>Disponible</span>
+                </label>
             </div>
 
             <!-- Bouton -->
@@ -173,7 +178,7 @@ const initialForm = {
     maison_id: "",
     meublee: false,
     salle_de_bain: false,
-    image_principale: null, // sera rempli par le fichier
+    disponible: false,
 };
 
 const form = ref({ ...initialForm });

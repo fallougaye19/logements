@@ -74,9 +74,9 @@ const submit = async () => {
 
         // Rediriger selon le rôle
         if (data.user.role === 'locataire') {
-            router.push('/dashboardLoc')
+            router.push('/login')
         } else {
-            router.push('/dashboard')
+            router.push('/login')
         }
     } catch (e) {
         error.value = 'Erreur lors de l"inscription'

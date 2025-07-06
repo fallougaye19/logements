@@ -43,6 +43,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('problemes', ProblemeController::class);
     Route::apiResource('rendez-vous', RendezVousController::class);
     Route::apiResource('utilisateurs', UserController::class);
-    Route::get('/stats', [StatsController::class, 'stats']);
+    //Route::get('/stats', [StatsController::class, 'stats']);
 });
 

@@ -100,7 +100,7 @@
                     </p>
                     <p>
                         Propriétaire :
-                        {{ chambre.proprietaire?.nom || "Inconnu" }}
+                        {{ maison.proprietaire?.nom || "Inconnu" }}
                     </p>
                     <div class="flex flex-wrap gap-2 mb-4">
                         <span

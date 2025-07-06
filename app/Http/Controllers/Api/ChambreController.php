@@ -37,7 +37,7 @@ class ChambreController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Chambre $chambre)
+    public function update(StoreChambreRequest $request, Chambre $chambre)
     {
         $chambre->update($request->all());
         return $chambre;

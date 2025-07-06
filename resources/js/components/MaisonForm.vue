@@ -65,16 +65,13 @@
                 <label class="text-sm font-medium text-gray-700 block mb-1"
                     >Propriétaire</label
                 >
-                <select v-model="form.proprietaire_id" class="input" required>
-                    <option disabled value="">-- Sélectionner --</option>
-                    <option
-                        v-for="user in users"
-                        :key="user.id"
-                        :value="user.id"
-                    >
-                        {{ user.nom }} ({{ user.email }})
-                    </option>
-                </select>
+                <input
+                    v-model="form.proprietaire_id"
+                    type="text"
+                    class="input"
+                    placeholder="Ex : 1"
+                    required
+                />
             </div>
 
             <!-- Coordonnées -->

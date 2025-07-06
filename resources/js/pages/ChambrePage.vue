@@ -3,7 +3,7 @@
         <!-- Titre + bouton ajouter -->
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Liste des chambres</h2>
-            <button v-if="isProprietaire" @click="openForm()" class="btn inline">
+            <button v-if="!isLocataire" @click="openForm()" class="btn inline">
                 <svg
                     class="w-4 h-4 mr-2"
                     fill="none"
@@ -188,7 +188,7 @@
                                     />
                                 </svg>
                             </button>
-                            <button v-if="isProprietaire"
+                            <button v-if="!isLocataire"
                                 @click="editChambre(chambre)"
                                 class="btn-icon text-yellow-600"
                                 title="Modifier"
@@ -207,7 +207,7 @@
                                     />
                                 </svg>
                             </button>
-                            <button v-if="isProprietaire"
+                            <button v-if="!isLocataire"
                                 @click="deleteChambre(chambre.id)"
                                 class="btn-icon text-red-600"
                                 title="Supprimer"

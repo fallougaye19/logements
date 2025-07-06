@@ -415,6 +415,7 @@ const perPage = 10;
 
 const user = JSON.parse(localStorage.getItem("user"));
 const isProprietaire = computed(() => user?.role === 'proprietaire');
+const isLocataire = computed (() => user?.role === 'locataire')
 
 // Calcul des données filtrées
 const filteredContrats = computed(() => {

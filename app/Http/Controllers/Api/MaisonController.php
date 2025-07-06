@@ -43,7 +43,7 @@ class MaisonController extends Controller
         $data = $request->validate([
         'adresse' => 'sometimes|required|string|max:255',
         'description' => 'nullable|string',
-        'proprietaire_id' => 'sometimes|required|exists:users,id',
+        'proprietaire_id' => 'sometimes|exists:users,id',
         'latitude' => 'sometimes|required|numeric',
         'longitude' => 'sometimes|required|numeric'
         ]);

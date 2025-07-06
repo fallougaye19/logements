@@ -6,7 +6,7 @@ class StoreChambreRequest extends FormRequest {
     public function authorize() { return true; }
     public function rules() {
         return [
-            'maison_id' => 'required|exists:maisons,id',
+            'maison_id' => 'exists:maisons,id',
             'titre' => 'required|string',
             'description' => 'nullable|string',
             'taille' => 'nullable|string',

@@ -10,7 +10,7 @@ class StoreMaisonRequest extends FormRequest {
             'description' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'proprietaire_id' => 'required|exists:users,id',
+            'proprietaire_id' => 'exists:users,id',
         ];
     }
 }

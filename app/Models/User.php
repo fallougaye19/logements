@@ -30,7 +30,8 @@ class User extends Authenticatable
         'password'
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -51,16 +52,25 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function maisons(){
+    public function maisons()
+    {
         return $this->hasMany(Maison::class, 'proprietaire_id');
     }
-    public function contrats(){
+    public function contrats()
+    {
         return $this->hasMany(Contrat::class, 'locataire_id');
     }
-    public function problemes(){
+    public function problemes()
+    {
         return $this->hasMany(Probleme::class, 'signale_par');
     }
-    public function rendezVous(){
+    public function rendezVous()
+    {
         return $this->hasMany(Rendez_Vous::class, 'locataire_id');
+    }
+
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class, 'locataire_id');
     }
 }

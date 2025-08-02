@@ -16,7 +16,11 @@ class Probleme extends Model
         'responsable',
         'resolu'
     ];
-    public $timestamps = false;
+    public $timestamps = true;
+
+    protected $casts = [
+        'resolu' => 'boolean',
+    ];
 
     public function contrat() {
         return $this->belongsTo(Contrat::class);

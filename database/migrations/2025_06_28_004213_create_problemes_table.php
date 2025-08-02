@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('contrat_id')->constrained('contrats')->onDelete('cascade');
             $table->foreignId('signale_par')->nullable()->constrained('users')->nullOnDelete();
             $table->text('description');
-            $table->string('type')->default('autre');
-            $table->string('responsable')->nullable();
+            $table->enum('type', ['plomberie', 'electricite', 'serrurerie', 'autre'])->default('autre');
+            $table->enum('responsable', ['locataire', 'proprietaire', 'indetermine'])->nullable();
             $table->boolean('resolu')->default(false);
-            $table->timestamp('cree_le')->nullable();
+            $table->timestamps();
         });
     }
 

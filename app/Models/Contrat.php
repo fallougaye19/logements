@@ -10,6 +10,7 @@ class Contrat extends Model
     use HasFactory;
     protected $fillable = [
         'locataire_id',
+        'proprietaire_id',
         'chambre_id',
         'date_debut',
         'date_fin',
@@ -20,7 +21,16 @@ class Contrat extends Model
         'periodicite',
         'statut'
     ];
-    public $timestamps = false;
+    public $timestamps = true;
+
+    protected $casts = [
+        'date_debut' => 'date',
+        'date_fin' => 'date',
+    ];
+
+    public function proprietaire() {
+        return $this->belongsTo(User::class, 'proprietaire_id');
+    }
 
     public function locataire() {
         return $this->belongsTo(User::class, 'locataire_id');

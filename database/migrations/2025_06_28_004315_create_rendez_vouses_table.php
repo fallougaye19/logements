@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('locataire_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('chambre_id')->constrained('chambres')->onDelete('cascade');
-            $table->timestamp('date_heure');
-            $table->string('statut')->default('en_attente');
-            $table->timestamp('cree_le')->nullable();
+            $table->datetime('date_heure');
+            $table->enum('statut', ['en_attente', 'confirmé', 'annulé'])->default('en_attente');
+            $table->timestamps();
         });
     }
 

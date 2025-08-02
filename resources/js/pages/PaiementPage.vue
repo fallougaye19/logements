@@ -1,605 +1,273 @@
 <template>
-    <div class="p-4">
-        <!-- Titre + bouton ajouter -->
+    <div
+        class="bg-white shadow-xl rounded-xl p-6 transition-all duration-300 hover:shadow-2xl"
+    >
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">
-                Liste des paiements
-            </h2>
-            <button v-if="!isLocataire" @click="openForm()" class="btn inline">
+            <h3 class="text-xl font-bold text-blue-700">
+                Historique des Paiements
+            </h3>
+            <div class="flex items-center space-x-4">
+                <div
+                    class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+                >
+                    {{ paiements.length }} paiement(s)
+                </div>
+                <!-- Bouton "Payer le contrat" visible uniquement pour les locataires -->
+                <button
+                    v-if="userRole === 'locataire'"
+                    @click="showPaiementForm = true"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm shadow transition-all"
+                >
+                    Payer le contrat
+                </button>
+            </div>
+        </div>
+
+        <div v-if="paiements.length > 0">
+            <div class="grid grid-cols-1 gap-4">
+                <div
+                    v-for="p in paiements"
+                    :key="p.id"
+                    class="border border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-colors"
+                >
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center mb-2">
+                                <div
+                                    class="w-3 h-3 rounded-full mr-2"
+                                    :class="{
+                                        'bg-green-500': p.statut === 'payé',
+                                        'bg-red-500': p.statut === 'impayé',
+                                        'bg-yellow-500': p.statut === 'retard',
+                                    }"
+                                ></div>
+                                <span
+                                    class="font-medium"
+                                    :class="{
+                                        'text-green-600': p.statut === 'payé',
+                                        'text-red-600': p.statut === 'impayé',
+                                        'text-yellow-600':
+                                            p.statut === 'retard',
+                                    }"
+                                    >{{ p.statut }}</span
+                                >
+                            </div>
+                            <div class="text-gray-500 text-sm mb-1">
+                                <span class="font-medium">Échéance:</span>
+                                {{ formatDate(p.date_echeance) }}
+                            </div>
+                            <div class="text-xl font-bold text-gray-800">
+                                {{ formatPrix(p.montant) }}
+                            </div>
+                        </div>
+
+                        <!-- Le bouton "Marquer payé" est maintenant correctement affiché pour les propriétaires -->
+                        <div
+                            v-if="p.statut === 'impayé' && userRole === 'proprietaire'"
+                            class="flex flex-col items-end"
+                        >
+                            <button
+                                @click="marquerPaye(p)"
+                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm font-medium flex items-center transition-colors"
+                                :disabled="loading"
+                            >
+                                <svg
+                                    v-if="!loading"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-4 w-4 mr-1"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                                <span v-if="!loading">Marquer payé</span>
+                                <span v-else class="flex items-center">
+                                    <svg
+                                        class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    En cours...
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="p.date_paiement"
+                        class="mt-3 pt-3 border-t border-gray-100 text-sm"
+                    >
+                        <div class="text-gray-500">
+                            <span class="font-medium">Payé le:</span>
+                            {{ formatDate(p.date_paiement) }}
+                        </div>
+                        <div v-if="p.mode_paiement" class="text-gray-500">
+                            <span class="font-medium">Moyen:</span>
+                            {{ p.mode_paiement }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-else class="text-center py-8">
+            <div class="inline-block p-4 bg-gray-100 rounded-full mb-3">
                 <svg
-                    class="w-4 h-4 mr-2"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-12 w-12 text-gray-400"
                     fill="none"
-                    stroke="currentColor"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                 >
                     <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                 </svg>
-                Nouveau paiement
-            </button>
-        </div>
-
-        <!-- Filtres et recherche -->
-        <div class="mb-6 flex flex-wrap gap-4">
-            <div class="flex-1 min-w-64">
-                <input
-                    v-model="searchTerm"
-                    placeholder="Rechercher un paiement..."
-                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
             </div>
-            <select
-                v-model="filterStatut"
-                class="px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-            >
-                <option disabled value="">-- Statut --</option>
-                <option value="">Tous</option>
-                <option value="payé">Payé</option>
-                <option value="en attente">En attente</option>
-                <option value="retard">Retard</option>
-            </select>
+            <p class="text-gray-500">
+                Aucun paiement enregistré pour ce contrat.
+            </p>
         </div>
+    </div>
 
-        <!-- Loading state -->
-        <div v-if="loading" class="text-center py-8">
-            <div
-                class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
-            ></div>
-            <p class="mt-2 text-gray-600">Chargement...</p>
-        </div>
-
-        <!-- Message d'erreur -->
+    <!-- Modale de paiement qui s'affiche lorsque showPaiementForm est vrai -->
+    <div
+        v-if="showPaiementForm"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+    >
         <div
-            v-if="error"
-            class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
+            class="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl relative"
         >
-            {{ error }}
-        </div>
-
-        <!-- Message de succès -->
-        <div
-            v-if="successMessage"
-            class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4"
-        >
-            {{ successMessage }}
-        </div>
-
-        <!-- Grille des paiements -->
-        <div
-            v-if="!loading && filteredPaiements.length"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-            <div
-                v-for="paiement in paginatedPaiements"
-                :key="paiement.id"
-                class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-            >
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold truncate">
-                        Paiement #{{ paiement.id }}
-                    </h3>
-                    <p class="text-sm text-gray-600 line-clamp-2">
-                        Contrat : {{ paiement.contrat?.id || "Aucun" }}
-                    </p>
-                    <div class="flex flex-wrap gap-2 mt-3">
-                        <span
-                            class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
-                        >
-                            Montant : {{ formatPrice(paiement.montant) }}
-                        </span>
-                        <span
-                            class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
-                        >
-                            Échéance : {{ formatDate(paiement.date_echeance) }}
-                        </span>
-                    </div>
-
-                    <!-- Statut -->
-                    <div class="mt-3">
-                        <span
-                            :class="{
-                                'bg-green-100 text-green-800':
-                                    paiement.statut === 'payé',
-                                'bg-yellow-100 text-yellow-800':
-                                    paiement.statut === 'en attente',
-                                'bg-red-100 text-red-800':
-                                    paiement.statut === 'retard',
-                            }"
-                            class="px-2 py-1 rounded-full text-xs font-medium"
-                        >
-                            {{ paiement.statut }}
-                        </span>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="mt-4 flex justify-between items-center">
-                        <div class="flex space-x-2">
-                            <button
-                                @click="viewPaiement(paiement)"
-                                class="btn-icon text-blue-600"
-                                title="Voir les détails"
-                            >
-                                <svg
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"
-                                    />
-                                </svg>
-                            </button>
-                            <button
-                                v-if="isProprietaire"
-                                @click="editPaiement(paiement)"
-                                class="btn-icon text-yellow-600"
-                                title="Modifier"
-                            >
-                                <svg
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                    />
-                                </svg>
-                            </button>
-                            <button
-                                v-if="isProprietaire"
-                                @click="deletePaiement(paiement.id)"
-                                class="btn-icon text-red-600"
-                                title="Supprimer"
-                            >
-                                <svg
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 0 0116.138 21H7.862a2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1H7a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                        <span class="text-xs text-gray-500">{{
-                            formatDate(paiement.created_at)
-                        }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Aucun résultat -->
-        <div
-            v-if="!loading && !filteredPaiements.length"
-            class="text-center py-12"
-        >
-            <svg
-                class="w-16 h-16 text-gray-400 mx-auto mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12h6m-6 0h6m2 12H7a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2z"
-                />
-            </svg>
-            <p class="text-gray-600">Aucun paiement trouvé</p>
-        </div>
-
-        <!-- Pagination -->
-        <div class="mt-8 flex justify-center space-x-2" v-if="totalPages > 1">
             <button
-                class="btn-secondary"
-                :disabled="currentPage === 1"
-                @click="currentPage--"
+                @click="showPaiementForm = false"
+                class="absolute top-2 right-2 text-gray-600 hover:text-red-600 text-xl font-bold"
             >
-                Précédent
+                &times;
             </button>
-            <template v-for="page in paginationRange" :key="page">
-                <button
-                    v-if="page !== '...'"
-                    @click="currentPage = page"
-                    :class="currentPage === page ? 'btn' : 'btn-secondary'"
-                    class="px-3 py-2"
-                >
-                    {{ page }}
-                </button>
-                <span v-else class="px-3 py-2 text-gray-500">...</span>
-            </template>
-            <button
-                class="btn-secondary"
-                :disabled="currentPage === totalPages"
-                @click="currentPage++"
-            >
-                Suivant
-            </button>
-        </div>
 
-        <!-- Modal Formulaire -->
-        <div
-            v-if="showForm"
-            class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-        >
-            <div
-                class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            >
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">
-                            {{
-                                editingPaiement
-                                    ? "Modifier le paiement"
-                                    : "Nouveau paiement"
-                            }}
-                        </h3>
-                        <button
-                            @click="closeForm"
-                            class="text-gray-500 hover:text-gray-700"
-                        >
-                            <svg
-                                class="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                    <PaiementForm
-                        :paiement="editingPaiement"
-                        @created="handleCreated"
-                        @updated="handleUpdated"
-                        @cancel="closeForm"
-                    />
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Visualisation -->
-        <div
-            v-if="viewingPaiement"
-            class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-        >
-            <div
-                class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            >
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">
-                            Détails du paiement
-                        </h3>
-                        <button
-                            @click="viewingPaiement = null"
-                            class="text-gray-500 hover:text-gray-700"
-                        >
-                            <svg
-                                class="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Contrat</label
-                            >
-                            <p>
-                                Contrat #{{
-                                    viewingPaiement.contrat?.id || "Inconnu"
-                                }}
-                            </p>
-                        </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Montant</label
-                            >
-                            <p>{{ formatPrice(viewingPaiement.montant) }}</p>
-                        </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Date d'échéance</label
-                            >
-                            <p>
-                                {{ formatDate(viewingPaiement.date_echeance) }}
-                            </p>
-                        </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Date de paiement</label
-                            >
-                            <p>
-                                {{
-                                    viewingPaiement.date_paiement
-                                        ? formatDate(
-                                                viewingPaiement.date_paiement
-                                            )
-                                        : "Non payé"
-                                }}
-                            </p>
-                        </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Statut</label
-                            >
-                            <p>
-                                <span
-                                    :class="{
-                                        'bg-green-100 text-green-800':
-                                            viewingPaiement.statut === 'payé',
-                                        'bg-yellow-100 text-yellow-800':
-                                            viewingPaiement.statut ===
-                                            'en attente',
-                                        'bg-red-100 text-red-800':
-                                            viewingPaiement.statut === 'retard',
-                                    }"
-                                    class="px-2 py-1 rounded-full text-xs font-medium"
-                                >
-                                    {{ viewingPaiement.statut }}
-                                </span>
-                            </p>
-                        </div>
-                        <div
-                            v-if="
-                                isProprietaire &&
-                                viewingPaiement.statut !== 'payé'
-                            "
-                        >
-                            <button
-                                @click="confirmerPaiement(viewingPaiement.id)"
-                                class="btn mt-4 bg-green-600 hover:bg-green-700"
-                            >
-                                Confirmer le paiement
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Le formulaire de paiement existant -->
+            <PaiementForm
+                :contrat-id="contratId"
+                @created="onPaiementCreated"
+            />
         </div>
     </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed, watch } from "vue";
+<script>
 import axios from "axios";
-import PaiementForm from "@/components/PaiementForm.vue";
+import PaiementForm from "@/components/paiements/PaiementForm.vue";
 
-const paiements = ref([]);
-const showForm = ref(false);
-const editingPaiement = ref(null);
-const viewingPaiement = ref(null);
-const loading = ref(false);
-const error = ref("");
-const successMessage = ref("");
+export default {
+    components: { PaiementForm },
+    data() {
+        return {
+            paiements: [],
+            loading: false,
+            showPaiementForm: false,
+            // Récupération de l'ID du contrat directement depuis l'URL
+            contratId: this.$route.params.id,
+            // Récupération du rôle de l'utilisateur depuis le localStorage
+            userRole: localStorage.getItem('userRole'),
+        };
+    },
+    async mounted() {
+        await this.loadPaiements();
+    },
+    methods: {
+        async loadPaiements() {
+            try {
+                const response = await axios.get(
+                    `/api/paiements?contrat_id=${this.contratId}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem(
+                                "token"
+                            )}`,
+                        },
+                    }
+                );
+                this.paiements = response.data.data;
+            } catch (error) {
+                console.error("Erreur chargement paiements:", error);
+            }
+        },
 
-// Filtres
-const searchTerm = ref("");
-const filterStatut = ref("");
+        async marquerPaye(paiement) {
+            this.loading = true;
+            try {
+                const response = await axios.post(
+                    `/api/paiements/${paiement.id}/marquer-payé`,
+                    {},
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem(
+                                "token"
+                            )}`,
+                        },
+                    }
+                );
 
-// Pagination
-const currentPage = ref(1);
-const perPage = 10;
+                if (response.data.success) {
+                    paiement.statut = "payé";
+                    paiement.date_paiement = response.data.data.date_paiement;
+                    this.$emit("paiement-updated", response.data.data);
+                }
+            } catch (error) {
+                alert("Erreur lors du paiement.");
+            } finally {
+                this.loading = false;
+            }
+        },
 
-const user = JSON.parse(localStorage.getItem("user"));
-const isProprietaire = computed(() => user?.role === "proprietaire");
+        formatDate(date) {
+            return date ? new Date(date).toLocaleDateString("fr-FR") : "N/A";
+        },
 
+        formatPrix(prix) {
+            return new Intl.NumberFormat("fr-FR", {
+                style: "currency",
+                currency: "XOF",
+            }).format(prix);
+        },
 
-const confirmerPaiement = async (id) => {
-    if (!confirm("Voulez-vous confirmer ce paiement ?")) return;
-        try {
-            await axios.put(`/api/paiements/${id}`, { statut: "payé" });
-            fetchPaiements();
-            showSuccessMessage("Paiement confirmé !");
-        } catch (e) {
-            error.value = "Erreur lors de la confirmation";
-            console.error(e);
-        }
+        onPaiementCreated(newPaiement) {
+            this.paiements.unshift(newPaiement);
+            this.showPaiementForm = false;
+        },
+    },
 };
-
-// Calcul des données filtrées
-const filteredPaiements = computed(() => {
-    let filtered = [...paiements.value];
-
-    // Recherche par texte
-    if (searchTerm.value) {
-        const term = searchTerm.value.toLowerCase();
-        filtered = filtered.filter(
-            (p) =>
-                p.contrat?.id.toString().includes(term) ||
-                p.statut.includes(term)
-        );
-    }
-
-    // Filtre par statut
-    if (filterStatut.value) {
-        filtered = filtered.filter((p) => p.statut === filterStatut.value);
-    }
-
-    return filtered;
-});
-
-const paginatedPaiements = computed(() => {
-    const start = (currentPage.value - 1) * perPage;
-    return filteredPaiements.value.slice(start, start + perPage);
-});
-
-const totalPages = computed(() =>
-    Math.ceil(filteredPaiements.value.length / perPage)
-);
-
-const paginationRange = computed(() => {
-    const delta = 2;
-    const range = [];
-    const rangeWithDots = [];
-
-    for (
-        let i = Math.max(2, currentPage.value - delta);
-        i <= Math.min(totalPages.value - 1, currentPage.value + delta);
-        i++
-    ) {
-        range.push(i);
-    }
-
-    if (currentPage.value - delta > 2) {
-        rangeWithDots.push(1, "...");
-    } else {
-        rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage.value + delta < totalPages.value - 1) {
-        rangeWithDots.push("...", totalPages.value);
-    } else if (totalPages.value > 1) {
-        rangeWithDots.push(totalPages.value);
-    }
-
-    return rangeWithDots;
-});
-
-// Méthodes
-const fetchPaiements = async () => {
-    try {
-        loading.value = true;
-        error.value = "";
-        const { data } = await axios.get("/api/paiements");
-        paiements.value = data;
-    } catch (err) {
-        error.value = "Erreur lors du chargement des paiements";
-        console.error(err);
-    } finally {
-        loading.value = false;
-    }
-};
-
-
-
-const openForm = (paiement = null) => {
-    editingPaiement.value = paiement;
-    showForm.value = true;
-};
-
-const closeForm = () => {
-    showForm.value = false;
-    editingPaiement.value = null;
-};
-
-const handleCreated = () => {
-    fetchPaiements();
-    closeForm();
-    showSuccessMessage("Paiement créé avec succès");
-};
-
-const handleUpdated = () => {
-    fetchPaiements();
-    closeForm();
-    showSuccessMessage("Paiement modifié avec succès");
-};
-
-const showSuccessMessage = (message) => {
-    successMessage.value = message;
-    setTimeout(() => (successMessage.value = ""), 3000);
-};
-
-const deletePaiement = async (id) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce paiement ?")) {
-        try {
-            await axios.post(`/api/paiements/${id}`, { _method: "DELETE" });
-            fetchPaiements();
-            showSuccessMessage("Paiement supprimé avec succès");
-        } catch (err) {
-            error.value = "Erreur lors de la suppression";
-            console.error(err);
-        }
-    }
-};
-
-const viewPaiement = (paiement) => {
-    viewingPaiement.value = paiement;
-};
-
-const editPaiement = (paiement) => {
-    openForm(paiement);
-};
-
-const formatPrice = (price) => {
-    return new Intl.NumberFormat("fr-FR", {
-        style: "currency",
-        currency: "XOF",
-    }).format(price);
-};
-
-const formatDate = (date) => {
-    return date ? new Date(date).toLocaleDateString("fr-FR") : "N/A";
-};
-
-watch([searchTerm, filterStatut], () => {
-    currentPage.value = 1;
-});
-
-onMounted(fetchPaiements);
 </script>
 
 <style scoped>
-.btn {
-    @apply bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center;
+/* Animation pour l'entrée des éléments */
+.card-enter-active {
+    transition: all 0.3s ease;
 }
-.btn-secondary {
-    @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors duration-200;
-}
-.btn-icon {
-    @apply p-2 rounded-full hover:bg-gray-100 transition-colors duration-200;
-}
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.card-enter-from {
+    opacity: 0;
+    transform: translateY(10px);
 }
 </style>

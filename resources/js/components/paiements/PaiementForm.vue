@@ -1,5 +1,5 @@
 <template>
-    <div class="p-8 bg-gray-100 min-h-screen flex justify-center items-start">
+    <div class="p-8 bg-gray-100 min-h-fit flex justify-center items-start">
         <form
             @submit.prevent="submit"
             class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-xl space-y-6"
@@ -10,9 +10,7 @@
 
             <!-- Contrat -->
             <div>
-                <label class="text-sm font-medium text-gray-700 block mb-1"
-                    >Contrat</label
-                >
+                <label class="text-sm font-medium text-gray-700 block mb-1">Contrat</label>
                 <select v-model="form.contrat_id" class="input" required>
                     <option disabled value="">-- Sélectionner --</option>
                     <option
@@ -28,9 +26,7 @@
 
             <!-- Montant -->
             <div>
-                <label class="text-sm font-medium text-gray-700 block mb-1"
-                    >Montant</label
-                >
+                <label class="text-sm font-medium text-gray-700 block mb-1">Montant</label>
                 <input
                     v-model.number="form.montant"
                     type="number"
@@ -41,51 +37,33 @@
                 />
             </div>
 
-            <!-- Statut – Visibilité conditionnelle -->
+            <!-- Statut -->
             <div v-if="isProprietaire || isEditingPaye">
-                <label class="text-sm font-medium text-gray-700 block mb-1"
-                    >Statut</label
-                >
+                <label class="text-sm font-medium text-gray-700 block mb-1">Statut</label>
                 <select v-model="form.statut" class="input" required>
                     <option disabled value="">-- Sélectionner --</option>
                     <option value="payé">Payé</option>
-                    <option value="en attente">En attente</option>
-                    <option value="retard">Retard</option>
+                    <option value="impayé">En attente</option>
+                    <option value="en_retard">En retard</option>
                 </select>
             </div>
 
             <!-- Dates -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="text-sm font-medium text-gray-700 block mb-1"
-                        >Date d'échéance</label
-                    >
-                    <input
-                        v-model="form.date_echeance"
-                        type="date"
-                        class="input"
-                        required
-                    />
+                    <label class="text-sm font-medium text-gray-700 block mb-1">Date d'échéance</label>
+                    <input v-model="form.date_echeance" type="date" class="input" required />
                 </div>
 
-                <!-- Date de paiement – visible seulement si statut = 'payé' -->
                 <div v-if="form.statut === 'payé' || isProprietaire">
-                    <label class="text-sm font-medium text-gray-700 block mb-1"
-                        >Date de paiement</label
-                    >
-                    <input
-                        v-model="form.date_paiement"
-                        type="date"
-                        class="input"
-                    />
+                    <label class="text-sm font-medium text-gray-700 block mb-1">Date de paiement</label>
+                    <input v-model="form.date_paiement" type="date" class="input" />
                 </div>
             </div>
 
             <!-- Mode de paiement -->
             <div v-if="isProprietaire || isEditing">
-                <label class="text-sm font-medium text-gray-700 block mb-1"
-                    >Mode de paiement</label
-                >
+                <label class="text-sm font-medium text-gray-700 block mb-1">Mode de paiement</label>
                 <input
                     v-model="form.mode_paiement"
                     type="text"
@@ -93,11 +71,11 @@
                     class="input"
                 />
                 <datalist id="modes-paiement">
-                    <option value="Virement bancaire"></option>
-                    <option value="Mobile Money"></option>
-                    <option value="Espèces"></option>
-                    <option value="Chèque"></option>
-                    <option value="Autre"></option>
+                    <option value="Virement bancaire" />
+                    <option value="Mobile Money" />
+                    <option value="Espèces" />
+                    <option value="Chèque" />
+                    <option value="Autre" />
                 </datalist>
             </div>
 
@@ -106,14 +84,9 @@
                 type="submit"
                 class="w-full bg-blue-600 hover:bg-blue-700 transition text-white font-semibold py-2 rounded-lg shadow"
             >
-                {{
-                    editing
-                        ? "Enregistrer les modifications"
-                        : "Ajouter le paiement"
-                }}
+                {{ editing ? "Enregistrer les modifications" : "Ajouter le paiement" }}
             </button>
 
-            <!-- Message -->
             <p
                 v-if="message"
                 class="text-sm text-center"
@@ -129,22 +102,19 @@
 import { ref, defineProps, defineEmits, computed, onMounted } from "vue";
 import axios from "axios";
 
+// Props
 const props = defineProps({
-    paiement: {
-        type: Object,
-        default: null,
-    },
+    paiement: { type: Object, default: null },
+    contratId: { type: [Number, String], default: null }, // Accepter Number ou String
 });
-
-const isEditing = computed(() => props.paiement !== null);
 
 const emit = defineEmits(["created", "updated"]);
 
-// État utilisateur connecté
+const isEditing = computed(() => props.paiement !== null);
+const editing = ref(!!props.paiement);
 const user = JSON.parse(localStorage.getItem("user"));
 const isProprietaire = computed(() => user?.role === "proprietaire");
 
-// Formulaire
 const initialForm = {
     contrat_id: "",
     montant: "",
@@ -155,31 +125,38 @@ const initialForm = {
 };
 
 const form = ref({ ...initialForm });
-const editing = ref(!!props.paiement);
 const contrats = ref([]);
+const message = ref("");
+const success = ref(false);
 
-// Chargement des contrats
+const isEditingPaye = computed(() => form.value.statut === "payé");
+
 const fetchContrats = async () => {
     try {
-        const res = await axios.get("/api/contrats");
-        contrats.value = res.data;
+        const token = localStorage.getItem("token");
+        const res = await axios.get("/api/contrats", {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        contrats.value = res.data.success ? res.data.data : res.data;
     } catch (err) {
         console.error("Erreur lors du chargement des contrats", err);
     }
 };
 
-onMounted(fetchContrats);
+onMounted(async () => {
+    await fetchContrats();
 
-// Si paiement existant, charger ses données
-if (props.paiement) {
-    form.value = { ...props.paiement };
-}
+    if (props.paiement) {
+        form.value = { ...props.paiement };
+    }
 
-// Vérifie si le statut est "payé"
-const isEditingPaye = computed(() => form.value.statut === "payé");
+    // Correction ici : bien récupérer l'ID du contrat
+    if (!props.paiement && props.contratId) {
+        form.value.contrat_id = Number(props.contratId); // S'assurer que c'est un nombre
+        console.log("Contrat ID récupéré:", props.contratId);
+    }
+});
 
-
-// Format monnaie
 const formatePrice = (price) => {
     return new Intl.NumberFormat("fr-FR", {
         style: "currency",
@@ -187,18 +164,24 @@ const formatePrice = (price) => {
     }).format(price);
 };
 
-// Soumission du formulaire
 const submit = async () => {
+    console.log("Form submitted:", JSON.stringify(form.value, null, 2));
+
     try {
+        const token = localStorage.getItem("token");
         let response;
+
         if (editing.value) {
             response = await axios.put(
                 `/api/paiements/${props.paiement.id}`,
-                form.value
+                form.value,
+                { headers: { Authorization: `Bearer ${token}` } }
             );
             emit("updated", response.data);
         } else {
-            response = await axios.post("/api/paiements", form.value);
+            response = await axios.post("/api/paiements", form.value, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             emit("created", response.data);
         }
 
@@ -206,22 +189,24 @@ const submit = async () => {
             ? "Paiement mis à jour."
             : "Paiement ajouté.";
         success.value = true;
+
+        // Réinitialiser le formulaire après création
+        if (!editing.value) {
+            form.value = { ...initialForm };
+            if (props.contratId) {
+                form.value.contrat_id = Number(props.contratId);
+            }
+        }
     } catch (e) {
+        console.error("Erreur lors de l'enregistrement du paiement", e);
         message.value = "Erreur lors de l'enregistrement.";
         success.value = false;
-        console.error(e);
     }
 };
-
-const message = ref("");
-const success = ref(false);
 </script>
 
 <style scoped>
 .input {
     @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm;
-}
-.btn {
-    @apply bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors;
 }
 </style>

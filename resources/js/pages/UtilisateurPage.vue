@@ -71,39 +71,111 @@
         <!-- Liste des locataires -->
         <div
             v-if="!loading && filteredLocataires.length"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
             <div
                 v-for="user in paginatedLocataires"
                 :key="user.id"
-                class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-300 transform"
             >
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold truncate">
-                        {{ user.nom }}
-                    </h3>
-                    <p class="text-sm text-gray-600 line-clamp-2">
-                        {{ user.email }}
-                    </p>
-                    <div class="flex flex-wrap gap-2 mt-3">
-                        <span
-                            class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
-                            >Téléphone :
-                            {{ user.telephone || "Non renseigné" }}</span
+                <!-- Header coloré par rôle -->
+                <div
+                    class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"
+                ></div>
+
+                <div class="p-6">
+                    <!-- Avatar + Nom -->
+                    <div class="flex items-center gap-4 mb-4">
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md"
                         >
-                        <span
-                            class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs"
-                            >Rôle : {{ user.role || "Aucun" }}</span
-                        >
+                            {{ user.nom.charAt(0).toUpperCase() }}
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">
+                                {{ user.nom }}
+                            </h3>
+                            <p class="text-sm text-gray-500">
+                                {{ user.role?.toUpperCase() }}
+                            </p>
+                        </div>
                     </div>
 
-                    <!-- Bouton voir détails -->
-                    <button
-                        @click="viewUtilisateur(user)"
-                        class="btn-icon text-blue-600 mt-4"
+                    <!-- Email -->
+                    <div
+                        class="flex items-center gap-2 text-sm text-gray-600 mb-3"
                     >
-                        Voir les détails
-                    </button>
+                        <svg
+                            class="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            />
+                        </svg>
+                        {{ user.email }}
+                    </div>
+
+                    <!-- Téléphone -->
+                    <div
+                        v-if="user.telephone"
+                        class="flex items-center gap-2 text-sm text-gray-600 mb-4"
+                    >
+                        <svg
+                            class="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                            />
+                        </svg>
+                        {{ user.telephone }}
+                    </div>
+
+                    <!-- Badge : Statut ou rôle -->
+                    <div
+                        class="flex justify-between items-center mt-4 pt-3 border-t border-gray-100"
+                    >
+                        <span
+                            class="text-xs font-medium px-3 py-1 rounded-full bg-blue-100 text-blue-800"
+                        >
+                            🏠
+                            {{
+                                user.chambre_numero
+                                    ? `Chambre ${user.chambre_numero}`
+                                    : "Non attribuée"
+                            }}
+                        </span>
+                        <button
+                            @click="viewUtilisateur(user)"
+                            class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center gap-1"
+                        >
+                            Détails
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 5l7 7-7 7"
+                                />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -170,16 +242,34 @@
             class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
         >
             <div
-                class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all scale-100 opacity-100 duration-300"
             >
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">
-                            Détails du locataire
-                        </h3>
+                <!-- Header avec couleur et avatar -->
+                <div
+                    class="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 text-white rounded-t-2xl"
+                >
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <!-- Avatar avec initiale -->
+                            <div
+                                class="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center text-xl font-bold"
+                            >
+                                {{
+                                    viewingUtilisateur.nom
+                                        .charAt(0)
+                                        .toUpperCase()
+                                }}
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold">
+                                    {{ viewingUtilisateur.nom }}
+                                </h3>
+                                <p class="text-blue-100">Locataire</p>
+                            </div>
+                        </div>
                         <button
                             @click="viewingUtilisateur = null"
-                            class="text-gray-500 hover:text-gray-700"
+                            class="text-white/80 hover:text-white transition-colors"
                         >
                             <svg
                                 class="w-6 h-6"
@@ -196,50 +286,163 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Nom</label
-                            >
-                            <p>{{ viewingUtilisateur.nom }}</p>
+                </div>
+
+                <!-- Corps de la modale -->
+                <div class="p-6 space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Email -->
+                        <div class="flex items-start gap-3">
+                            <div class="mt-1 text-gray-400">
+                                <svg
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-500"
+                                    >Email</label
+                                >
+                                <p class="text-gray-900 break-all">
+                                    {{ viewingUtilisateur.email }}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Email</label
-                            >
-                            <p>{{ viewingUtilisateur.email }}</p>
+
+                        <!-- Téléphone -->
+                        <div class="flex items-start gap-3">
+                            <div class="mt-1 text-gray-400">
+                                <svg
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                    />
+                                </svg>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-500"
+                                    >Téléphone</label
+                                >
+                                <p class="text-gray-900">
+                                    {{
+                                        viewingUtilisateur.telephone ||
+                                        "Non renseigné"
+                                    }}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Téléphone</label
-                            >
-                            <p>
-                                {{
-                                    viewingUtilisateur.telephone ||
-                                    "Non renseigné"
-                                }}
-                            </p>
+
+                        <!-- CNI -->
+                        <div class="flex items-start gap-3">
+                            <div class="mt-1 text-gray-400">
+                                <svg
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0120 9v12a2 2 0 01-2 2z"
+                                    />
+                                </svg>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-500"
+                                    >CNI</label
+                                >
+                                <p class="text-gray-900">
+                                    {{
+                                        viewingUtilisateur.cni ||
+                                        "Non renseigné"
+                                    }}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >CNI</label
-                            >
-                            <p>
-                                {{ viewingUtilisateur.cni || "Non renseigné" }}
-                            </p>
+
+                        <!-- Date d'inscription -->
+                        <div class="flex items-start gap-3">
+                            <div class="mt-1 text-gray-400">
+                                <svg
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-500"
+                                    >Inscrit le</label
+                                >
+                                <p class="text-gray-900">
+                                    {{
+                                        formatDate(
+                                            viewingUtilisateur.created_at
+                                        )
+                                    }}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Date d'inscription</label
+                    </div>
+
+                    <!-- Section complémentaire (optionnelle) -->
+                    <div
+                        v-if="viewingUtilisateur.chambre_numero"
+                        class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100"
+                    >
+                        <div class="flex items-center gap-2 text-blue-800">
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
                             >
-                            <p>
-                                {{ formatDate(viewingUtilisateur.created_at) }}
-                            </p>
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+                                />
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M8 21v-4a2 2 0 012-2h4a2 2 0 012 2v4"
+                                />
+                            </svg>
+                            <span class="font-medium"
+                                >Chambre attribuée :
+                                {{ viewingUtilisateur.chambre_numero }}</span
+                            >
                         </div>
                     </div>
                 </div>
@@ -256,9 +459,7 @@
             >
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">
-                            Nouveau locataire
-                        </h3>
+                        <h3 class="text-lg font-semibold">Nouveau locataire</h3>
                         <button
                             @click="showForm = false"
                             class="text-gray-500 hover:text-gray-700"
@@ -288,7 +489,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import axios from "axios";
-import UtilisateurForm from "@/components/UtilisateurForm.vue";
+import UtilisateurForm from "@/components/utilisateurs/UtilisateurForm.vue";
 
 const utilisateurs = ref([]);
 const loading = ref(false);
@@ -322,10 +523,10 @@ const filteredLocataires = computed(() => {
     // );
     return Array.isArray(locataires.value)
         ? locataires.value.filter(
-            (u) =>
-                u.nom?.toLowerCase().includes(term) ||
-                u.email?.toLowerCase().includes(term)
-        )
+              (u) =>
+                  u.nom?.toLowerCase().includes(term) ||
+                  u.email?.toLowerCase().includes(term)
+          )
         : [];
 });
 
@@ -409,29 +610,58 @@ const handleVisibilityChange = () => {
 
 onMounted(() => {
     fetchUtilisateurs();
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 });
 
 // Nettoyer l'écouteur d'événement
 onUnmounted(() => {
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 </script>
 
 <style scoped>
+/* Amélioration des boutons */
 .btn {
-    @apply bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center;
+    @apply bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center shadow-sm hover:shadow-md transform hover:-translate-y-0.5;
 }
 .btn-secondary {
-    @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors duration-200;
+    @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-300 transition-all duration-200 shadow-sm hover:shadow hover:translate-y-0.5;
 }
 .btn-icon {
-    @apply p-2 rounded-full hover:bg-gray-100 transition-colors duration-200;
+    @apply p-2 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110;
 }
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+
+/* Cartes de locataires avec effet de profondeur */
+.bg-white.rounded-lg.shadow-md {
+    @apply rounded-xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1;
+}
+
+/* Animation d'entrée des cartes */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.grid.grid-cols-1\.md\:grid-cols-2\.lg\:grid-cols-3 > div {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+.animate-modal {
+    animation: modalIn 0.3s ease-out;
 }
 </style>

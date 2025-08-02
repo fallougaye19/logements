@@ -15,7 +15,19 @@ class Paiement extends Model
         'date_echeance',
         'date_paiement'
     ];
-    public $timestamps = false;
+    public $timestamps = true;
+
+    protected $casts = [
+        'cree_le' => 'datetime',
+        'date_echeance' => 'datetime',
+        'date_paiement' => 'datetime',
+        'montant' => 'decimal:2',
+    ];
+
+    public static $rules = [
+        'type' => ['in:plomberie,electricite,serrurerie,autre'],
+        'responsable' => ['in:locataire,proprietaire,indetermine'],
+    ];
 
     public function contrat() {
         return $this->belongsTo(Contrat::class);

@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('contrat_id')->constrained('contrats')->onDelete('cascade');
             $table->decimal('montant', 10, 2);
-            $table->string('statut')->default('impayé');
+            $table->enum('statut', ['impayé', 'payé', 'en_retard'])->default('impayé');
             $table->date('date_echeance');
             $table->timestamp('date_paiement')->nullable();
-            $table->timestamp('cree_le')->nullable();
+            $table->timestamps();
         });
     }
 

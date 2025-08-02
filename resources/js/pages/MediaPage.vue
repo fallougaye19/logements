@@ -1,11 +1,16 @@
 <template>
-    <div class="p-4">
-        <!-- Titre + bouton ajouter -->
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Liste des médias</h2>
-            <button @click="openForm()" class="btn inline">
+    <div class="p-6 bg-gray-50 min-h-screen">
+        <!-- ... en-tête amélioré ... -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Médias</h2>
+                <p class="text-gray-600 mt-1">
+                    Gérez vos photos, vidéos et documents
+                </p>
+            </div>
+            <button @click="openForm()" class="btn-primary">
                 <svg
-                    class="w-4 h-4 mr-2"
+                    class="w-5 h-5 mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -59,12 +64,12 @@
         <!-- Grille des médias -->
         <div
             v-if="!loading && filteredMedias.length"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-flow-cols-4 gap-6"
         >
             <div
                 v-for="media in paginatedMedias"
                 :key="media.id"
-                class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100"
             >
                 <div class="p-4">
                     <h3 class="text-lg font-semibold truncate">
@@ -73,6 +78,30 @@
                     <p class="text-sm text-gray-600 line-clamp-2">
                         Chambre : {{ media.chambre?.titre || "Aucune" }}
                     </p>
+                    <div class="mt-3">
+                        <template v-if="media.type === 'image'">
+                            <img
+                                :src="media.url"
+                                alt="media preview"
+                                class="w-full h-48 rounded object-contain bg-gray-100"
+                            />
+                        </template>
+                        <template v-else-if="media.type === 'video'">
+                            <video
+                                controls
+                                class="w-full h-48 rounded"
+                                :src="media.url"
+                            ></video>
+                        </template>
+                        <template v-else-if="media.type === 'document'">
+                            <a
+                                :href="media.url"
+                                target="_blank"
+                                class="text-blue-600 underline"
+                                >Voir le document</a
+                            >
+                        </template>
+                    </div>
                     <div class="flex flex-wrap gap-2 mt-3">
                         <span
                             class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
@@ -319,6 +348,32 @@
                             >
                             <p>{{ viewingMedia.url }}</p>
                         </div>
+                        <div class="mt-4">
+                            <template v-if="viewingMedia.type === 'image'">
+                                <img
+                                    :src="viewingMedia.url"
+                                    alt="media preview"
+                                    class="w-full max-h-96 object-contain rounded"
+                                />
+                            </template>
+                            <template v-else-if="viewingMedia.type === 'video'">
+                                <video
+                                    controls
+                                    class="w-full max-h-96 rounded"
+                                    :src="viewingMedia.url"
+                                ></video>
+                            </template>
+                            <template
+                                v-else-if="viewingMedia.type === 'document'"
+                            >
+                                <a
+                                    :href="viewingMedia.url"
+                                    target="_blank"
+                                    class="text-blue-600 underline"
+                                    >Voir le document</a
+                                >
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -329,7 +384,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from "vue";
 import axios from "axios";
-import MediaForm from "@/components/MediaForm.vue";
+import MediaForm from "@/components/medias/MediaForm.vue";
 
 const medias = ref([]);
 const showForm = ref(false);
@@ -407,7 +462,8 @@ const fetchMedias = async () => {
     try {
         loading.value = true;
         error.value = "";
-        const { data } = await axios.get("/api/medias");
+        // Fetch medias with maison and chambre relations
+        const { data } = await axios.get("/api/medias?with=maison,chambre");
         medias.value = data;
     } catch (err) {
         error.value = "Erreur lors du chargement des médias";
@@ -477,19 +533,7 @@ onMounted(fetchMedias);
 </script>
 
 <style scoped>
-.btn {
-    @apply bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center;
-}
-.btn-secondary {
-    @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors duration-200;
-}
-.btn-icon {
-    @apply p-2 rounded-full hover:bg-gray-100 transition-colors duration-200;
-}
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center;
 }
 </style>

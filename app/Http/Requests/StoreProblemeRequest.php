@@ -10,7 +10,6 @@ class StoreProblemeRequest extends FormRequest {
             'description' => 'required|string',
             'type' => 'nullable|string',
             'responsable' => 'nullable|string',
-            'resolu' => 'boolean',
         ];
     }
 }

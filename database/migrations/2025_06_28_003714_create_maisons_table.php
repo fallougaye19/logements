@@ -18,7 +18,9 @@ return new class extends Migration
             $table->decimal('latitude', 10, 6)->nullable();
             $table->decimal('longitude', 10, 6)->nullable();
             $table->text('description')->nullable();
-            $table->timestamp('cree_le')->nullable();
+            $table->string('image')->nullable();
+            $table->boolean('active')->default(true);
+            $table->timestamps();
         });
     }
 

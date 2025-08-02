@@ -2,12 +2,26 @@
 
 <template>
     <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-        <form @submit.prevent="login" class="bg-white shadow-lg p-8 rounded-xl w-full max-w-sm space-y-6">
-            <h1 class="text-2xl font-bold text-center text-gray-800">Connexion</h1>
+        <form
+            @submit.prevent="login"
+            class="bg-white shadow-lg p-8 rounded-xl w-full max-w-sm space-y-6"
+        >
+            <h1 class="text-2xl font-bold text-center text-gray-800">
+                Connexion
+            </h1>
 
             <!-- Message d'erreur -->
             <div v-if="error" class="bg-red-100 text-red-700 p-3 rounded">
                 {{ error }}
+            </div>
+
+            <div
+                v-if="$route.query.action === 'reserve'"
+                class="mb-6 p-4 bg-blue-50 rounded-lg"
+            >
+                <p class="text-blue-700 font-medium">
+                    Vous devez vous connecter pour réserver cette chambre
+                </p>
             </div>
 
             <!-- Email -->
@@ -61,29 +75,35 @@
 import { ref } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
+import { initializeCsrfCookie } from "../csrf";
 
 const router = useRouter();
 const form = ref({ email: "", password: "" });
 const error = ref("");
 
 const login = async () => {
-    error.value = ''  // Clear any previous error
+    error.value = ""; // Clear any previous error
     try {
-        const { data } = await axios.post('/api/auth/login', form.value) // Use /api/auth/login to match your API route
-        localStorage.setItem('token', data.token)
-        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
+        await initializeCsrfCookie(); // Initialize CSRF cookie before login
+        const { data } = await axios.post("/api/auth/login", form.value); // Use /api/auth/login to match your API route
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("userRole", data.user.role);
+
+        axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
 
         // Vérification si l'utilisateur a un rôle valide avant redirection
         const userRole = data.user.role;
-        if (userRole === 'locataire') {
-            router.push('/dashboardLoc')  // Redirection vers le dashboardLoc pour les locataires
-        } else if (userRole === 'proprietaire') {
-            router.push('/dashboard')  // Redirection vers le dashboard pour les propriétaires
+        if (userRole === "locataire") {
+            router.push("/dashboardLoc"); // Redirection vers le dashboardLoc pour les locataires
+        } else if (userRole === "proprietaire") {
+            router.push("/dashboard"); // Redirection vers le dashboard pour les propriétaires
         } else {
-            error.value = 'Rôle utilisateur non valide'; // Si aucun rôle valide n'est trouvé
+            error.value = "Rôle utilisateur non valide"; // Si aucun rôle valide n'est trouvé
         }
     } catch (e) {
-        error.value = e.response?.data?.message || "Erreur lors de la connexion"
+        error.value =
+            e.response?.data?.message || "Erreur lors de la connexion";
     }
 };
 </script>

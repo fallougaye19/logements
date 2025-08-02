@@ -14,16 +14,17 @@ return new class extends Migration
         Schema::create('contrats', function (Blueprint $table) {
             $table->id();
             $table->foreignId('locataire_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('proprietaire_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('chambre_id')->constrained('chambres')->onDelete('cascade');
             $table->date('date_debut');
             $table->date('date_fin')->nullable();
             $table->decimal('montant_caution', 10, 2)->nullable();
-            $table->unsignedTinyInteger('mois_caution')->nullable();
+            $table->tinyInteger('mois_caution')->unsigned()->default(1);
             $table->text('description')->nullable();
-            $table->string('mode_paiement')->nullable();
-            $table->string('periodicite')->nullable();
-            $table->string('statut')->default('actif');
-            $table->timestamp('cree_le')->nullable();
+            $table->enum('mode_paiement',['virement', 'espèces', 'mobile_money', 'chèque'])->nullable();
+            $table->enum('periodicite',['journalier', 'hebdomadaire', 'mensuel'])->default('mensuel');
+            $table->enum('statut', ['actif', 'resilie', 'expiré'])->default('actif');
+            $table->timestamps();
         });
     }
 

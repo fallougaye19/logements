@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('cni')->nullable();
             $table->enum('role', ['proprietaire', 'locataire']);
             $table->string('password')->nullable();
-            $table->timestamp('cree_le')->nullable();
+            $table->timestamps();
         });
     }
 

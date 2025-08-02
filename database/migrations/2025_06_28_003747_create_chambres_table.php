@@ -22,7 +22,8 @@ return new class extends Migration
             $table->boolean('salle_de_bain')->default(false);
             $table->decimal('prix', 10, 2)->nullable();
             $table->boolean('disponible')->default(true);
-            $table->timestamp('cree_le')->nullable();
+            $table->string('image')->nullable();
+            $table->timestamps();
         });
     }
 

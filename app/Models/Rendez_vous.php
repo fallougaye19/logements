@@ -14,7 +14,11 @@ class Rendez_vous extends Model
         'date_heure',
         'statut'
     ];
-    public $timestamps = false;
+    public $timestamps = true;
+    
+    protected $casts = [
+        'date_heure' => 'datetime',
+    ];
 
     public function locataire() {
         return $this->belongsTo(User::class, 'locataire_id');

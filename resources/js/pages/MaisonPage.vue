@@ -1,10 +1,14 @@
 <template>
-    <div class="p-4">
+    <div class="container mx-auto p-6">
+        <!-- En-tête -->
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Liste des maisons</h2>
-            <button @click="openForm()" class="btn inline">
+            <h1 class="text-3xl font-bold text-gray-800">Mes Maisons</h1>
+            <button
+                @click="showCreateModal = true"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            >
                 <svg
-                    class="w-4 h-4 mr-2"
+                    class="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -13,255 +17,67 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
+                        d="M12 4v16m8-8H4"
+                    ></path>
                 </svg>
                 Ajouter une maison
             </button>
         </div>
 
-        <!--Filtre-->
-        <div class="mb-6 flex flex-wrap gap-4">
-            <div class="flex-1 min-w-64">
+        <!-- Barre de recherche et filtres -->
+        <div class="mb-6 flex gap-4">
+            <div class="flex-1">
                 <input
                     v-model="searchTerm"
-                    placeholder="Rechercher une maison..."
-                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    @input="searchMaisons"
+                    type="text"
+                    placeholder="Rechercher par adresse ou description..."
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
             </div>
+            <select
+                v-model="filterStatus"
+                @change="searchMaisons"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+                <option value="">Toutes les maisons</option>
+                <option value="true">Maisons actives</option>
+                <option value="false">Maisons inactives</option>
+            </select>
         </div>
 
-        <!-- Loading state -->
-        <div v-if="loading" class="text-center py-8">
+        <!-- Loading -->
+        <div v-if="loading" class="flex justify-center py-8">
             <div
-                class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
             ></div>
-            <p class="mt-2 text-gray-600">Chargement...</p>
         </div>
 
-        <!-- Message d'erreur -->
-        <div
-            v-if="error"
-            class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
-        >
-            {{ error }}
-        </div>
-
-        <!-- Message de succès -->
-        <div
-            v-if="successMessage"
-            class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4"
-        >
-            {{ successMessage }}
-        </div>
-
-        <!-- Liste des maisons -->
-        <div
-            v-if="!loading && filteredMaisons.length"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
+        <!-- Liste des maisons ou message si aucune maison -->
+        <template v-if="!loading">
             <div
-                v-for="maison in paginatedMaisons"
-                :key="maison.id"
-                class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                v-if="maisons.length > 0"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-                <!-- Image -->
-                <div class="relative h-48 bg-gray-200">
-                    <img
-                        v-if="maison.image_principale"
-                        :src="maison.image_principale"
-                        class="w-full h-full object-cover"
-                    />
-                    <div
-                        v-else
-                        class="w-full h-full flex items-center justify-center"
-                    >
-                        <svg
-                            class="w-16 h-16 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                        </svg>
-                    </div>
-                </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-gray-900 truncate">
-                        {{ maison.adresse }}
-                    </h3>
-                    <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                        {{ maison.description || "Aucune description" }}
-                    </p>
-                    <p>
-                        Propriétaire :
-                        {{ maison.proprietaire?.nom || "Inconnu" }}
-                    </p>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span
-                            class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
-                            >Propriétaire: {{ maison.proprietaire?.nom }}</span
-                        >
-                        <span
-                            class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs"
-                            >Chambres: {{ maison.chambres_count }}</span
-                        >
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <div class="flex space-x-2">
-                            <button
-                                @click="viewMaison(maison)"
-                                class="btn-icon text-blue-600"
-                                title="Voir les détails"
-                            >
-                                <svg
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"
-                                    />
-                                </svg>
-                            </button>
-                            <button
-                                @click="editMaison(maison)"
-                                class="btn-icon text-yellow-600"
-                                title="Modifier"
-                            >
-                                <svg
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                    />
-                                </svg>
-                            </button>
-                            <button
-                                @click="deleteMaison(maison.id)"
-                                class="btn-icon text-red-600"
-                                title="Supprimer"
-                            >
-                                <svg
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                        <span class="text-xs text-gray-500">{{
-                            formatDate(maison.created_at)
-                        }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!--Aucun resultat-->
-        <div
-            v-if="!loading && !filteredMaisons.length"
-            class="text-center py-12"
-        >
-            <svg
-                class="w-16 h-16 text-gray-400 mx-auto mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-            </svg>
-            <p class="text-gray-600">Aucune maison trouvée</p>
-            <button @click="openForm()" class="btn mt-4">
-                Ajouter la première maison
-            </button>
-        </div>
-
-        <!-- Pagination -->
-        <div class="mt-8 flex justify-center space-x-2" v-if="totalPages > 1">
-            <button
-                class="btn-secondary"
-                :disabled="currentPage === 1"
-                @click="currentPage--"
-            >
-                Précédent
-            </button>
-            <template v-for="page in paginationRange" :key="page">
-                <button
-                    v-if="page !== '...'"
-                    @click="currentPage = page"
-                    :class="currentPage === page ? 'btn' : 'btn-secondary'"
-                    class="px-3 py-2"
+                <div
+                    v-for="maison in maisons"
+                    :key="maison.id"
+                    class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
                 >
-                    {{ page }}
-                </button>
-                <span v-else class="px-3 py-2 text-gray-500">...</span>
-            </template>
-            <button
-                class="btn-secondary"
-                :disabled="currentPage === totalPages"
-                @click="currentPage++"
-            >
-                Suivant
-            </button>
-        </div>
-
-        <!-- Modal -->
-        <div
-            v-if="showForm"
-            class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-        >
-            <div
-                class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            >
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">
-                            {{
-                                editingMaison
-                                    ? "Modifier la maison"
-                                    : "Ajouter une maison"
-                            }}
-                        </h3>
-                        <button
-                            @click="closeForm"
-                            class="text-gray-500 hover:text-gray-700"
+                    <!-- Image de la maison -->
+                    <div class="h-48 bg-gray-200 relative">
+                        <img
+                            v-if="maison.image_url"
+                            :src="maison.image_url"
+                            :alt="maison.adresse"
+                            class="w-full h-full object-cover"
+                        />
+                        <div
+                            v-else
+                            class="w-full h-full flex items-center justify-center text-gray-500"
                         >
                             <svg
-                                class="w-6 h-6"
+                                class="w-12 h-12"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -270,253 +86,484 @@
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                    <MaisonForm
-                        :maison="editingMaison"
-                        @created="handleCreated"
-                        @updated="handleUpdated"
-                        @cancel="closeForm"
-                    />
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de visualisation -->
-        <div
-            v-if="viewingMaison"
-            class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-        >
-            <div
-                class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            >
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">
-                            Détails de la maison
-                        </h3>
-                        <button
-                            @click="viewingMaison = null"
-                            class="text-gray-500 hover:text-gray-700"
-                        >
-                            <svg
-                                class="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
+                                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+                                ></path>
                                 <path
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
+                                    d="M8.5 13.5l2.5-3 2.5 3"
+                                ></path>
                             </svg>
-                        </button>
+                        </div>
+
+                        <!-- Badge de statut -->
+                        <div class="absolute top-2 right-2">
+                            <span
+                                :class="
+                                    maison.active
+                                        ? 'bg-green-500'
+                                        : 'bg-red-500'
+                                "
+                                class="px-2 py-1 text-xs text-white rounded-full"
+                            >
+                                {{ maison.active ? "Active" : "Inactive" }}
+                            </span>
+                        </div>
                     </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Adresse</label
-                            >
-                            <p class="text-lg">{{ viewingMaison?.adresse }}</p>
+
+                    <!-- Contenu de la carte -->
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-2 text-gray-800">
+                            {{ maison.adresse }}
+                        </h3>
+                        <p
+                            v-if="maison.description"
+                            class="text-gray-600 text-sm mb-3 line-clamp-2"
+                        >
+                            {{ maison.description }}
+                        </p>
+
+                        <div
+                            class="flex items-center gap-4 text-sm text-gray-500 mb-3"
+                        >
+                            <span class="flex items-center gap-1">
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                                    ></path>
+                                </svg>
+                                {{ maison.nombre_chambres }} chambre(s)
+                            </span>
                         </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Description</label
-                            >
-                            <p>
-                                {{
-                                    viewingMaison?.description ||
-                                    "Aucune description"
-                                }}
-                            </p>
-                        </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Propriétaire</label
-                            >
-                            <p>
-                                {{
-                                    viewingMaison?.proprietaire?.nom ||
-                                    "Inconnu"
-                                }}
-                            </p>
-                        </div>
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-500"
-                                >Coordonnées</label
-                            >
-                            <p>
-                                Lat: {{ viewingMaison?.latitude }}, Long:
-                                {{ viewingMaison?.longitude }}
-                            </p>
+
+                        <!-- Actions -->
+                        <div class="flex justify-between items-center">
+                            <!-- Actions gauche : Voir & Modifier -->
+                            <div class="flex gap-3">
+                                <!-- Voir détails -->
+                                <button
+                                    @click="viewMaison(maison)"
+                                    class="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-all duration-200 group"
+                                    title="Voir les détails de la maison"
+                                    aria-label="Voir les détails"
+                                >
+                                    <svg
+                                        class="w-4 h-4 opacity-80 group-hover:scale-105"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"
+                                        />
+                                    </svg>
+                                    <span class="text-sm font-medium"
+                                        >Voir</span
+                                    >
+                                </button>
+
+                                <!-- Modifier -->
+                                <button
+                                    @click="editMaison(maison)"
+                                    class="flex items-center gap-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 px-3 py-1.5 rounded-lg transition-all duration-200 group"
+                                    title="Modifier cette maison"
+                                    aria-label="Modifier"
+                                >
+                                    <svg
+                                        class="w-4 h-4 opacity-80 group-hover:rotate-12 transition-transform"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                        />
+                                    </svg>
+                                    <span class="text-sm font-medium"
+                                        >Modifier</span
+                                    >
+                                </button>
+                            </div>
+
+                            <!-- Actions droite : Activer/Désactiver & Supprimer -->
+                            <div class="flex gap-3">
+                                <!-- Activer / Désactiver -->
+                                <button
+                                    @click="toggleStatus(maison)"
+                                    :class="
+                                        maison.active
+                                            ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                                            : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                                    "
+                                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 group"
+                                    :title="
+                                        maison.active
+                                            ? 'Désactiver la maison'
+                                            : 'Activer la maison'
+                                    "
+                                    aria-label="Activer/Désactiver"
+                                >
+                                    <svg
+                                        v-if="maison.active"
+                                        class="w-4 h-4 opacity-80 group-hover:scale-110"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 18.364z"
+                                        />
+                                    </svg>
+                                    <svg
+                                        v-else
+                                        class="w-4 h-4 opacity-80 group-hover:scale-110"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M5 13l4 4L19 7"
+                                        />
+                                    </svg>
+                                    <span class="text-sm font-medium">
+                                        {{
+                                            maison.active
+                                                ? "Désactiver"
+                                                : "Activer"
+                                        }}
+                                    </span>
+                                </button>
+
+                                <!-- Supprimer -->
+                                <button
+                                    @click="deleteMaison(maison)"
+                                    class="flex items-center gap-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all duration-200 group"
+                                    title="Supprimer cette maison"
+                                    aria-label="Supprimer"
+                                >
+                                    <svg
+                                        class="w-4 h-4 opacity-80 group-hover:scale-110"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                    </svg>
+                                    <span class="text-sm font-medium"
+                                        >Supprimer</span
+                                    >
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+            <div v-else class="text-center py-12">
+                <svg
+                    class="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    ></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">
+                    Aucune maison trouvée
+                </h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    Commencez par ajouter une nouvelle maison.
+                </p>
+            </div>
+        </template>
+
+        <!-- Modal de création/modification -->
+        <MaisonForm
+            :show="showCreateModal || showEditModal"
+            :maison="selectedMaison"
+            :is-editing="showEditModal"
+            :user-role="userRole"
+            @close="closeModals"
+            @saved="onMaisonSaved"
+        />
+
+        <!-- Modal de détails -->
+        <MaisonDetails
+            :show="showDetailsModal"
+            :maison="selectedMaison"
+            :user-role="userRole"
+            @close="showDetailsModal = false"
+        />
     </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed, watch } from "vue";
-import axios from "axios";
-import MaisonForm from "@/components/MaisonForm.vue";
+<script>
+import { ref, onMounted } from "vue";
+import MaisonForm from "@/components/maisons/MaisonForm.vue";
+import MaisonDetails from "@/components/maisons/MaisonDetails.vue";
 
-const maisons = ref([]);
-const showForm = ref(false);
-const editingMaison = ref(null);
-const viewingMaison = ref(null);
-const loading = ref(false);
-const error = ref("");
-const successMessage = ref("");
-const searchTerm = ref("");
-// Pagination
-const currentPage = ref(1);
-const perPage = 10;
+// Service pour les appels API
+const maisonService = {
+    async getMaisons(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const response = await fetch(`/api/maisons?${queryString}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        });
+        return { data: await response.json() };
+    },
 
-const filteredMaisons = computed(() => {
-    return maisons.value.filter(
-        (maison) =>
-            maison.adresse
-                .toLowerCase()
-                .includes(searchTerm.value.toLowerCase()) ||
-            (maison.description &&
-                maison.description
-                    .toLowerCase()
-                    .includes(searchTerm.value.toLowerCase()))
-    );
-});
+    async toggleStatus(maisonId) {
+        const response = await fetch(`/api/maisons/${maisonId}/toggle-status`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        });
+        return { data: await response.json() };
+    },
 
-const paginatedMaisons = computed(() => {
-    const start = (currentPage.value - 1) * perPage;
-    return filteredMaisons.value.slice(start, start + perPage);
-});
-
-const totalPages = computed(() =>
-    Math.ceil(filteredMaisons.value.length / perPage)
-);
-
-const paginationRange = computed(() => {
-    const delta = 2;
-    const range = [];
-    const rangeWithDots = [];
-
-    for (
-        let i = Math.max(2, currentPage.value - delta);
-        i <= Math.min(totalPages.value - 1, currentPage.value + delta);
-        i++
-    ) {
-        range.push(i);
-    }
-
-    if (currentPage.value - delta > 2) {
-        rangeWithDots.push(1, "...");
-    } else {
-        rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage.value + delta < totalPages.value - 1) {
-        rangeWithDots.push("...", totalPages.value);
-    } else if (totalPages.value > 1) {
-        rangeWithDots.push(totalPages.value);
-    }
-
-    return rangeWithDots;
-});
-
-const fetchMaisons = async () => {
-    try {
-        loading.value = true;
-        const { data } = await axios.get(
-            "/api/maisons?with=proprietaire,chambres"
-        );
-        maisons.value = data;
-    } catch (err) {
-        error.value = "Erreur lors du chargement des maisons";
-        console.error(err);
-    } finally {
-        loading.value = false;
-    }
+    async deleteMaison(maisonId) {
+        const response = await fetch(`/api/maisons/${maisonId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        });
+        return { data: await response.json() };
+    },
 };
 
-const openForm = (maison = null) => {
-    editingMaison.value = maison;
-    showForm.value = true;
-};
-
-const closeForm = () => {
-    showForm.value = false;
-    editingMaison.value = null;
-};
-
-const handleCreated = () => {
-    fetchMaisons();
-    closeForm();
-    showSuccessMessage("Maison créée avec succès");
-};
-
-const handleUpdated = () => {
-    fetchMaisons();
-    closeForm();
-    showSuccessMessage("Maison modifiée avec succès");
-};
-
-const showSuccessMessage = (msg) => {
-    successMessage.value = msg;
-    setTimeout(() => (successMessage.value = ""), 3000);
-};
-
-const deleteMaison = async (id) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette maison ?")) {
-        try {
-            await axios.delete(`/api/maisons/${id}`);
-            fetchMaisons();
-            showSuccessMessage("Maison supprimée avec succès");
-        } catch (err) {
-            error.value = "Erreur lors de la suppression";
-            console.error(err);
+// Composable pour les notifications
+const useToast = () => {
+    const showToast = (message, type = "info") => {
+        // Implémentation simple avec alert, remplacez par votre système de toast
+        if (type === "error") {
+            console.error(message);
+            alert(`Erreur: ${message}`);
+        } else if (type === "success") {
+            console.log(message);
+            alert(`Succès: ${message}`);
+        } else {
+            console.info(message);
+            alert(message);
         }
-    }
+    };
+
+    return { showToast };
 };
 
-const viewMaison = (maison) => {
-    viewingMaison.value = maison;
+export default {
+    name: "MaisonsIndex",
+    components: {
+        MaisonForm,
+        MaisonDetails,
+    },
+    setup() {
+        const { showToast } = useToast();
+
+        // État réactif
+        const maisons = ref([]);
+        const loading = ref(false);
+        const searchTerm = ref("");
+        const filterStatus = ref("");
+
+        // Modales
+        const showCreateModal = ref(false);
+        const showEditModal = ref(false);
+        const showDetailsModal = ref(false);
+        const selectedMaison = ref(null);
+
+        const userRole = ref(localStorage.getItem("userRole") || "");
+
+        // Méthodes
+        const loadMaisons = async () => {
+            loading.value = true;
+            try {
+                let response;
+                if (userRole.value === "proprietaire") {
+                    response = await maisonService.getMaisons({
+                        proprietaire: true,
+                    });
+                } else if (userRole.value === "locataire") {
+                    response = await maisonService.getMaisons({
+                        disponibles: true,
+                    });
+                } else {
+                    response = await maisonService.getMaisons();
+                }
+                if (response.data.success) {
+                    maisons.value = response.data.data;
+                }
+            } catch (error) {
+                console.error("Erreur:", error);
+                showToast("Erreur lors du chargement des maisons", "error");
+            } finally {
+                loading.value = false;
+            }
+        };
+
+        const searchMaisons = async () => {
+            loading.value = true;
+            try {
+                const params = {};
+                if (searchTerm.value) params.search = searchTerm.value;
+                if (filterStatus.value !== "")
+                    params.active = filterStatus.value;
+
+                if (userRole.value === "proprietaire") {
+                    params.proprietaire = true;
+                } else if (userRole.value === "locataire") {
+                    params.disponibles = true;
+                }
+
+                const response = await maisonService.getMaisons(params);
+                if (response.data.success) {
+                    maisons.value = response.data.data;
+                }
+            } catch (error) {
+                console.error("Erreur:", error);
+                showToast("Erreur lors de la recherche", "error");
+            } finally {
+                loading.value = false;
+            }
+        };
+
+        const viewMaison = (maison) => {
+            selectedMaison.value = maison;
+            showDetailsModal.value = true;
+        };
+
+        const editMaison = (maison) => {
+            selectedMaison.value = maison;
+            showEditModal.value = true;
+        };
+
+        const toggleStatus = async (maison) => {
+            try {
+                const response = await maisonService.toggleStatus(maison.id);
+                if (response.data.success) {
+                    maison.active = !maison.active;
+                    showToast(response.data.message, "success");
+                }
+            } catch (error) {
+                console.error("Erreur:", error);
+                showToast("Erreur lors du changement de statut", "error");
+            }
+        };
+
+        const deleteMaison = async (maison) => {
+            if (!confirm("Êtes-vous sûr de vouloir supprimer cette maison ?")) {
+                return;
+            }
+
+            try {
+                const response = await maisonService.deleteMaison(maison.id);
+                if (response.data.success) {
+                    maisons.value = maisons.value.filter(
+                        (m) => m.id !== maison.id
+                    );
+                    showToast("Maison supprimée avec succès", "success");
+                }
+            } catch (error) {
+                console.error("Erreur:", error);
+                showToast("Erreur lors de la suppression", "error");
+            }
+        };
+
+        const closeModals = () => {
+            showCreateModal.value = false;
+            showEditModal.value = false;
+            selectedMaison.value = null;
+        };
+
+        const onMaisonSaved = (maison) => {
+            if (showEditModal.value) {
+                // Mise à jour
+                const index = maisons.value.findIndex(
+                    (m) => m.id === maison.id
+                );
+                if (index !== -1) {
+                    maisons.value[index] = maison;
+                }
+            } else {
+                // Création
+                maisons.value.unshift(maison);
+            }
+            closeModals();
+            showToast("Maison sauvegardée avec succès", "success");
+        };
+
+        // Lifecycle
+        onMounted(() => {
+            loadMaisons();
+        });
+
+        return {
+            maisons,
+            loading,
+            searchTerm,
+            filterStatus,
+            showCreateModal,
+            showEditModal,
+            showDetailsModal,
+            selectedMaison,
+            userRole,
+            loadMaisons,
+            searchMaisons,
+            viewMaison,
+            editMaison,
+            toggleStatus,
+            deleteMaison,
+            closeModals,
+            onMaisonSaved,
+        };
+    },
 };
-
-const editMaison = (maison) => {
-    openForm(maison);
-};
-
-const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("fr-FR");
-};
-
-watch([searchTerm], () => {});
-
-onMounted(fetchMaisons);
 </script>
 
 <style scoped>
-.btn {
-    @apply bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center;
-}
-.btn-secondary {
-    @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors duration-200;
-}
-.btn-icon {
-    @apply p-2 rounded-full hover:bg-gray-100 transition-colors duration-200;
-}
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('media', function (Blueprint $table) {
             $table->id();
             $table->foreignId('chambre_id')->constrained('chambres')->onDelete('cascade');
-            $table->string('url');
+            $table->string('url')->nullable();
             $table->string('type')->default('photo');
             $table->text('description')->nullable();
             $table->timestamp('cree_le')->nullable();

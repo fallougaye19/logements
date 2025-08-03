@@ -35,6 +35,7 @@ Route::prefix('auth')->group(function () {
     Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 });
 
+Route::get('/chambres/disponibles', [ChambreController::class, 'chambresDisponibles']);
 Route::middleware(['auth:sanctum'])->group(function () {
     //maisons
     Route::apiResource('/maisons', MaisonController::class);
@@ -46,7 +47,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chambres/search', [ChambreController::class, 'search']);
     Route::get('chambres/available', [ChambreController::class, 'available']);
     Route::get('/chambres/mes', [ChambreController::class, 'mesChambres']);
-    Route::get('/chambres/disponibles', [ChambreController::class, 'chambresDisponibles']);
     Route::get('/chambres/libres', [ChambreController::class, 'chambresLibres']);
     Route::post('/chambres/{chambre}/reserve', [ChambreController::class, 'reserve']);
     Route::post('/chambres/{chambre}/accepter', [ChambreController::class, 'accepterReservation']);
